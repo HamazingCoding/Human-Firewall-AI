@@ -105,7 +105,7 @@ export default function PhishingDetection() {
             onChange={(e) => setContent(e.target.value)}
             placeholder={getPlaceholderText()}
             rows={6}
-            className="bg-primary-dark border-gray-700 text-gray-100 placeholder:text-gray-500 resize-none"
+            className="bg-primary-dark border-gray-700 text-black placeholder:text-gray-500 resize-none"
           />
         </div>
         
