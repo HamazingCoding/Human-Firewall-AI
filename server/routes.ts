@@ -11,6 +11,12 @@ import {
   resultStatusEnum 
 } from "@shared/schema";
 import OpenAI from "openai";
+import { spawn } from 'child_process';
+import fsPromises from 'fs/promises';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configure multer for file uploads with memory storage
 const upload = multer({
@@ -140,103 +146,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
 // Helper functions for analysis
 
 async function analyzeVoice(file: Express.Multer.File) {
-  // In a real implementation, this would use a machine learning model or API
-  // to analyze the voice. For demonstration, we'll use a simplified approach
-  // with OpenAI to simulate the analysis.
-  
-  // Simulate analysis with random score for demo purposes
-  const isAuthentic = Math.random() > 0.3; // 70% chance of being authentic
-  const score = isAuthentic ? 70 + Math.floor(Math.random() * 30) : Math.floor(Math.random() * 40);
-  const status = isAuthentic ? "real" : "fake";
-  
-  // Factors based on the status
-  let factors: string[] = [];
-  if (isAuthentic) {
-    factors = [
-      "Natural speech rhythm and micro-variations",
-      "Consistent breath patterns throughout audio",
-      "No algorithmic artifacts in voice frequency",
-      "Natural emotional inflections detected"
-    ];
-  } else {
-    factors = [
-      "Unnatural speech rhythm detected",
-      "Inconsistent breath patterns",
-      "Algorithmic artifacts in voice frequency",
-      "Missing natural emotional inflections"
-    ];
-  }
-
   try {
-    // Attempt to analyze with OpenAI if available (would be real implementation)
-    if (process.env.OPENAI_API_KEY) {
-      // This would be a real implementation with actual audio analysis
-      // For now, we return the simulated result
+    // Create a temporary file path for the uploaded audio
+    const tempDir = path.join(__dirname, 'temp');
+    try {
+      await fsPromises.access(tempDir);
+    } catch {
+      await fsPromises.mkdir(tempDir);
+    }
+    const tempFilePath = path.join(tempDir, `${Date.now()}.wav`);
+    
+    // Write the uploaded file to disk
+    await fsPromises.writeFile(tempFilePath, file.buffer);
+
+    // Run the Python script for voice analysis
+    const pythonScript = path.join(__dirname, 'voice_detection.py');
+    const result = await new Promise<string>((resolve, reject) => {
+      const pythonProcess = spawn('python', [pythonScript, tempFilePath]);
+      
+      let output = '';
+      pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        console.error(`Python Error: ${data}`);
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          resolve(output.trim());
+        } else {
+          reject(new Error(`Python process exited with code ${code}`));
+        }
+      });
+    });
+
+    // Clean up the temporary file
+    try {
+      await fsPromises.unlink(tempFilePath);
+    } catch (error) {
+      console.error('Error cleaning up temporary file:', error);
     }
 
-    return {
-      score,
-      status: status as "real" | "fake" | "suspicious" | "safe",
-      factors
-    };
+    // Parse the JSON result
+    if (!result) {
+      throw new Error('No result received from voice analysis');
+    }
+    const analysisResult = JSON.parse(result);
+    return analysisResult;
   } catch (error) {
-    console.error("OpenAI voice analysis error:", error);
-    // Fall back to simulated result if API call fails
-    return {
-      score,
-      status: status as "real" | "fake" | "suspicious" | "safe",
-      factors
-    };
+    console.error("Voice analysis error:", error);
+    throw new Error("Failed to analyze voice: " + (error as Error).message);
   }
 }
 
 async function analyzeVideo(file: Express.Multer.File) {
-  // In a real implementation, this would use computer vision models
-  // to analyze the video for deepfake characteristics
-  
-  // Simulate analysis with random score for demo purposes
-  const isDeepfake = Math.random() > 0.7; // 30% chance of being a deepfake
-  const score = isDeepfake ? Math.floor(Math.random() * 40) : 60 + Math.floor(Math.random() * 40);
-  const status = isDeepfake ? "fake" : "real";
-  
-  // Factors based on the status
-  let factors: string[] = [];
-  if (isDeepfake) {
-    factors = [
-      "Inconsistent eye blinking patterns",
-      "Unnatural facial movements at frame boundaries",
-      "Audio-visual synchronization issues detected",
-      "Digital artifacts around facial features"
-    ];
-  } else {
-    factors = [
-      "Consistent eye blinking patterns",
-      "Natural facial movements throughout video",
-      "Strong audio-visual synchronization",
-      "No digital artifacts detected around facial features"
-    ];
-  }
-
   try {
-    // Attempt to analyze with OpenAI if available (would be real implementation)
-    if (process.env.OPENAI_API_KEY) {
-      // This would be a real implementation with actual video analysis
-      // For now, we return the simulated result
+    // Create a temporary file path for the uploaded video
+    const tempDir = path.join(__dirname, 'temp');
+    try {
+      await fsPromises.access(tempDir);
+    } catch {
+      await fsPromises.mkdir(tempDir);
+    }
+    const tempFilePath = path.join(tempDir, `${Date.now()}.mp4`);
+    
+    // Write the uploaded file to disk
+    await fsPromises.writeFile(tempFilePath, file.buffer);
+
+    // Run the Python script for video analysis
+    const pythonScript = path.join(__dirname, 'video_detection.py');
+    const result = await new Promise<string>((resolve, reject) => {
+      const pythonProcess = spawn('python', [pythonScript, tempFilePath]);
+      
+      let output = '';
+      pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        console.error(`Python Error: ${data}`);
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          resolve(output.trim());
+        } else {
+          reject(new Error(`Python process exited with code ${code}`));
+        }
+      });
+    });
+
+    // Clean up the temporary file
+    try {
+      await fsPromises.unlink(tempFilePath);
+    } catch (error) {
+      console.error('Error cleaning up temporary file:', error);
     }
 
-    return {
-      score,
-      status: status as "real" | "fake" | "suspicious" | "safe",
-      factors
-    };
+    // Parse the JSON result
+    if (!result) {
+      throw new Error('No result received from video analysis');
+    }
+    const analysisResult = JSON.parse(result);
+    return analysisResult;
   } catch (error) {
-    console.error("OpenAI video analysis error:", error);
-    // Fall back to simulated result if API call fails
-    return {
-      score,
-      status: status as "real" | "fake" | "suspicious" | "safe",
-      factors
-    };
+    console.error("Video analysis error:", error);
+    throw new Error("Failed to analyze video: " + (error as Error).message);
   }
 }
 
