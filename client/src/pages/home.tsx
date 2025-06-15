@@ -2,7 +2,6 @@ import { Helmet } from "react-helmet";
 import HeroSection from "@/components/HeroSection";
 import DetectionTabs from "@/components/DetectionTabs";
 import HowItWorks from "@/components/HowItWorks";
-import Statistics from "@/components/Statistics";
 import EnterpriseFeatures from "@/components/EnterpriseFeatures";
 
 export default function Home() {
@@ -19,8 +18,6 @@ export default function Home() {
         <DetectionTabs />
         
         <HowItWorks />
-        
-        <Statistics />
         
         <EnterpriseFeatures />
       </div>

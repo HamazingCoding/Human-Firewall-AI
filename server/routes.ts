@@ -5,12 +5,18 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { randomUUID } from "crypto";
+import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
 import { 
   analysisResponseSchema, 
   phishingDetectionSchema, 
   resultStatusEnum 
 } from "@shared/schema";
 import OpenAI from "openai";
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configure multer for file uploads with memory storage
 const upload = multer({
@@ -24,6 +30,15 @@ const upload = multer({
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "your-openai-api-key",
 });
+
+// Extend Express Request type to include file property
+declare global {
+  namespace Express {
+    interface Request {
+      file?: Express.Multer.File;
+    }
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Voice detection endpoint
@@ -140,53 +155,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 // Helper functions for analysis
 
 async function analyzeVoice(file: Express.Multer.File) {
-  // In a real implementation, this would use a machine learning model or API
-  // to analyze the voice. For demonstration, we'll use a simplified approach
-  // with OpenAI to simulate the analysis.
-  
-  // Simulate analysis with random score for demo purposes
-  const isAuthentic = Math.random() > 0.3; // 70% chance of being authentic
-  const score = isAuthentic ? 70 + Math.floor(Math.random() * 30) : Math.floor(Math.random() * 40);
-  const status = isAuthentic ? "real" : "fake";
-  
-  // Factors based on the status
-  let factors: string[] = [];
-  if (isAuthentic) {
-    factors = [
-      "Natural speech rhythm and micro-variations",
-      "Consistent breath patterns throughout audio",
-      "No algorithmic artifacts in voice frequency",
-      "Natural emotional inflections detected"
-    ];
-  } else {
-    factors = [
-      "Unnatural speech rhythm detected",
-      "Inconsistent breath patterns",
-      "Algorithmic artifacts in voice frequency",
-      "Missing natural emotional inflections"
-    ];
-  }
-
   try {
-    // Attempt to analyze with OpenAI if available (would be real implementation)
-    if (process.env.OPENAI_API_KEY) {
-      // This would be a real implementation with actual audio analysis
-      // For now, we return the simulated result
+    // Create a temporary file path
+    const tempDir = path.join(__dirname, "..", "temp");
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    
+    const tempFilePath = path.join(tempDir, `${randomUUID()}.wav`);
+    fs.writeFileSync(tempFilePath, file.buffer);
+
+    // Call the Python script
+    const pythonScript = path.join(__dirname, "..", "AIs", "voice_detection.py");
+    const modelPath = path.join(__dirname, "..", "AIs", "model.pkl");
+    const scalerPath = path.join(__dirname, "..", "AIs", "scaler.pkl");
+
+    const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+      const pythonProcess = spawn("python", [pythonScript, tempFilePath, modelPath, scalerPath]);
+      
+      let stdoutData = "";
+      let stderrData = "";
+      
+      pythonProcess.stdout.on("data", (data: Buffer) => {
+        stdoutData += data.toString();
+      });
+      
+      pythonProcess.stderr.on("data", (data: Buffer) => {
+        stderrData += data.toString();
+      });
+      
+      pythonProcess.on("close", (code: number) => {
+        if (code !== 0) {
+          reject(new Error(`Python script exited with code ${code}: ${stderrData}`));
+        } else {
+          resolve({ stdout: stdoutData, stderr: stderrData });
+        }
+      });
+    });
+
+    // Clean up the temporary file
+    fs.unlinkSync(tempFilePath);
+
+    // Parse the Python script output
+    const result = JSON.parse(stdout);
+    
+    if (result.error) {
+      throw new Error(result.error);
     }
 
     return {
-      score,
-      status: status as "real" | "fake" | "suspicious" | "safe",
-      factors
+      score: result.is_ai_generated ? 100 - (result.confidence * 100) : result.confidence * 100,
+      status: result.is_ai_generated ? "fake" : "real",
+      factors: [{
+        name: "Voice Analysis",
+        description: result.message,
+        confidence: result.confidence * 100
+      }]
     };
   } catch (error) {
-    console.error("OpenAI voice analysis error:", error);
-    // Fall back to simulated result if API call fails
-    return {
-      score,
-      status: status as "real" | "fake" | "suspicious" | "safe",
-      factors
-    };
+    console.error("Voice analysis error:", error);
+    throw error;
   }
 }
 

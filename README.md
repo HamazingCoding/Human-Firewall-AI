@@ -23,6 +23,7 @@ Human Firewall AI addresses the challenge of social engineering attacks by intro
 Before running the application, make sure you have the following installed:
 - [Node.js](https://nodejs.org/) (version 20 or later)
 - npm (comes with Node.js)
+- [Python](https://www.python.org/) (version 3.8 or later)
 - An OpenAI API key (get one from [OpenAI Platform](https://platform.openai.com/))
 
 ## Installation and Setup
@@ -34,24 +35,36 @@ Before running the application, make sure you have the following installed:
    cd human-firewall-ai
    ```
 
-3. **Install Dependencies**
+3. **Install Node.js Dependencies**
    ```bash
    npm install
    ```
 
-4. **Create Environment Variables**
+4. **Set Up Python Environment**
+   ```bash
+   # Create and activate a virtual environment (recommended)
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   
+   # Install Python dependencies
+   cd AIs
+   pip install -r requirements.txt
+   cd ..
+   ```
+
+5. **Create Environment Variables**
    
    Create a `.env` file in the root directory of the project and add your OpenAI API key:
    ```
    OPENAI_API_KEY=your_openai_api_key_here
    ```
 
-5. **Start the Development Server**
+6. **Start the Development Server**
    ```bash
    npm run dev
    ```
 
-6. **Access the Application**
+7. **Access the Application**
    
    Open your browser and navigate to:
    ```
@@ -96,6 +109,12 @@ This application uses the OpenAI API for content analysis. Please be aware of Op
    
 3. **Analysis Failure**: If analysis fails, check the console for error messages and verify your API key has sufficient quota
 
+4. **Python Environment Issues**:
+   - Ensure Python is installed and in your system PATH
+   - Verify all Python dependencies are installed correctly
+   - Check that the Python virtual environment is activated (if using one)
+   - Make sure the model files (model.pkl and scaler.pkl) are present in the AIs directory
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
@@ -105,3 +124,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Built with React, Express, and the OpenAI API
 - Uses shadcn/ui components for the user interface
 - Implements best practices for secure file handling and processing
+- Voice detection powered by custom machine learning models
