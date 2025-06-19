@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, Video } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeDeepfake } from "@/lib/api";
 import type { AnalysisResponse } from "@shared/schema";
@@ -46,6 +46,10 @@ export default function DeepfakeDetection() {
     }
   };
 
+  const handleLiveDeepfake = () => {
+    window.open('/live-deepfake', '_blank');
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div>
@@ -62,7 +66,7 @@ export default function DeepfakeDetection() {
           className="mb-6"
         />
         
-        <div className="flex justify-center">
+        <div className="flex justify-center gap-4">
           <Button
             className="bg-accent-teal text-white hover:bg-accent-teal/90"
             onClick={handleAnalyzeVideo}
@@ -79,6 +83,13 @@ export default function DeepfakeDetection() {
                 Analyze Video
               </>
             )}
+          </Button>
+          <Button
+            className="bg-accent-blue text-white hover:bg-accent-blue/90"
+            onClick={handleLiveDeepfake}
+          >
+            <Video className="w-5 h-5 mr-2" />
+            Live Deepfake Detection
           </Button>
         </div>
       </div>

@@ -7,12 +7,16 @@ import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Home from "@/pages/home";
+import LiveAudioDetection from "@/pages/live-audio";
+import LiveDeepfakeDetection from "@/pages/live-deepfake";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/live-audio" component={LiveAudioDetection} />
+      <Route path="/live-deepfake" component={LiveDeepfakeDetection} />
       <Route component={NotFound} />
     </Switch>
   );
