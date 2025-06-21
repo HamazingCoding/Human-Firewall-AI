@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx server/index.ts",
-    "dev:all": "concurrently \"npm run dev\" \"python ./LiveStreamAudio/app.py\" \"cd DeepfakeShield && run_app.bat\"",   
+    "dev:all": "concurrently \"npm run dev\" \"cd LiveStreamAudio && run_app.bat\" \"cd DeepfakeShield && run_app.bat\"",   
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc",
