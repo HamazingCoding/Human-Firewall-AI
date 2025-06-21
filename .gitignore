@@ -6,3 +6,7 @@ vite.config.ts.*
 *.tar.gz.env
 .env
 .env
+DeepfakeShield/venv/
+LiveStreamAudio/venv/
+__pycache__/
+*.pyc
